@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.1.min.js"></script>
+    <meta charset="UTF-8">
+    <title>你好厲害</title>
+    <style>
+      p
+      {
+       display: inline; 
+      }
+    </style>
+  </head>
+
+  <body>
+    
+    <table width="50%" border="0" cellspacing="0" cellpadding="0" align="center">
+      <tr>
+        <th>
+          <table width="100%">
+            <tr>
+              <td width="100%">
+              
+                <form method="post" id="search">
+                  <p>日期區間:<input value="" id="date_ago_id" type="date" name="date_ago">~<input value="" id="date_id" type="date" name="date"></p>
+                  <p>聯盟:
+                  <select name="search_Alliance" id="search_Alliance_id">
+                  </select>
+                  </p><br>
+                  <p>客隊:<input type="text" value=""name="search_Visitors" id="search_Visitors_id"></p>
+                  <p>主隊:<input type="text" value="" name="search_Home_team" id="search_Home_team_id"></p>
+                  <button type="button" onclick="secarch()" name="search">尋找</button>
+                </form>
+                <form id="analysis" >
+                  <button type="button" onclick="analysis()">分析</button>
+                </form>
+              </td>
+            </tr>
+          </table>
+        </th>
+      </tr>
+      <tr>
+        <td>
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="70%" align="left" style="height:30px; background:url(../img/ttb.jpg) 0% 0% repeat-x; line-height:30px;">
+                <img src="img/Basketball.png" border="0" align="absmiddle">
+                <img src="img/Football.png" border="0" align="absmiddle">
+                <img src="img/Baseball.png" border="0" align="absmiddle">
+                <font style="font-size:14px;font-weight:bold; color:#FFF; padding-left:10px; line-height:30px;">（僅顯示最近七日賽事結果）</font>
+              </td>
+              <td width="50%" align="center" style="font-size:14px;font-weight:bold;color:#F30;height:30px; background:url(../img/ttb.jpg)0% 0% repeat-x; line-height:30px;">※ 取消比賽</td>
+            </tr>
+          </table>  
+        </td>  
+      </tr>
+      <tr>
+        <td>
+          <table  width="100%" border="1" cellpadding="0" cellspacing="0" style="font-size:13px; border-collapse:collapse; text-align: center;" bordercolor="#ccc">
+            <tr height="40">
+                <th width="10%" align="center" style="color:#111; background:#d2ebf4;">賽事編號</th>
+                <th width="20%" align="center" style="color:#111; background:#d2ebf4;">聯盟</th>
+                <th width="23%" align="center" style="color:#111; background:#d2ebf4;">對戰隊伍<br>(客隊 對 主隊)</th>
+                <th width="15%" align="center" style="color:#111; background:#d2ebf4;">比賽日期</th>
+                <th width="10%" align="center" style="color:#111; background:#d2ebf4;">上半場</th>
+                <th width="10%" align="center" style="color:#111; background:#d2ebf4;">全場</th>
+                <th width="12%" align="center" style="color:#111; background:#d2ebf4;">備註</th>
+            </tr>
+              <tbody id="game_form" >
+              </tbody>
+            </tr>
+          </table>
+        </td>
+      </tr>  
+    </table>
+    <p id="aa"></p>
+  </body>
+</html>
+<script>
+  var first = 1; 
+  if (first == 1)
+  { //第一次近來
+    $.ajax({
+      url:"search_php.php",
+      data:"first=first",
+      type:"POST", 
+      dataType:"json",
+      
+      success:function(msg){
+        var game_form='';
+        for(key in msg['game_array']) //key  日期
+        {
+          game_form+='<tr height="40" class="button_tr" >'+
+                        '<th colspan="7" style="background:#F0FFF0">'+key+
+                        '<img width=20px onclick="click_show(this.id)" id="'+key+'" src="img/down.png" border="0" align="absmiddle"></th>'+
+                     '</tr>';
+          for(key_2 in msg['game_array'][key]) //key_2聯盟
+          {
+            for(key_3 in msg['game_array'][key][key_2])//key_3 編號
+            {
+              var val = msg['game_array'][key][key_2][key_3];
+              game_form+='<tr height="40" class="'+key+'">'+
+                              '<td>'+val['number']+'</td>'+
+                              '<td>'+key_2+'</td>'+
+                              '<td>'+val['Visitors']+
+                                '<font style="color:#900;">對 </font>'+
+                                val['Home team']+'</td>'+
+                              '<td>'+key+'</td>'+
+                              '<td>'+val['First half']+'</td>'+
+                              '<td>'+val['All_Game']+'</td>'+
+                              '<td>'+val['Remarks']+'</td>'+
+                          '</tr>';
+            }
+          }
+        }
+        var Alliance_form= '<option value="">請選擇聯盟</option>';;
+        for (key in msg['my_Alliance'])
+        {
+          Alliance_form+= '<option value="'+key+'">'+key+'</option>'; //印出選項
+        }
+        document.getElementById("search_Alliance_id").innerHTML=Alliance_form;
+        document.getElementById("game_form").innerHTML = game_form;
+      },
+      error:function(xhr,ajaxOptions,thrownError){
+        alert('失敗'+thrownError+ajaxOptions);
+      }  
+    });
+    
+    first = 0;
+  }
+  function analysis()
+  {//按下分析
+    var game_form='';
+    $.ajax({
+      url:"data_php.php",
+      type:"POST", 
+      dataType:"json",
+      
+      success:function(msg){
+        var game_form_ADD='';
+        var game_form_upd='';
+        for (var key in msg) {
+          if(key=='ADD')
+          {
+            for (var key_2 in msg[key]) //key_2新增比數
+            {
+              if(key_2 == 0)
+              {
+                game_form_ADD='<tr><td colspan="7"><table width="100%" border="1" cellpadding="0" cellspacing="0" style="font-size:13px; border-collapse:collapse; text-align: center;" bordercolor="#ccc">'+
+                      '<tr height="40">'+
+                        '<th colspan="7" style="background:#F0F8FF">新增了'+key_2+'</th>'+
+                      '</tr>';
+              }else
+              {
+                game_form_ADD='<tr><td colspan="7"><table width="100%" border="1" cellpadding="0" cellspacing="0" style="font-size:13px; border-collapse:collapse; text-align: center;" bordercolor="#ccc">'+
+                      '<tr height="40">'+
+                        '<th colspan="7" style="background:#F0F8FF">新增了'+key_2+'</th>'+
+                      '</tr>';
+                for (var key_3 in msg[key][key_2]) //key_3日期
+                {  
+                game_form_ADD+='<tr height="40" class="button_tr" >'+
+                    '<th colspan="7" style="background:#F0FFF0">'+key_3+
+                        '<img width=20px onclick="click_show(this.id)" id="'+key_3+'" src="img/down.png" border="0" align="absmiddle"></th>'+
+                   '</tr>';
+                  for (var key_4 in msg[key][key_2][key_3])//key_4 聯盟
+                  {
+                    for (var key_5 in msg[key][key_2][key_3][key_4])//key_5 索引號
+                    {
+                      var val = msg[key][key_2][key_3][key_4][key_5];
+                          game_form_ADD+='<tr height="40" class="'+key_3+'">'+
+                                  '<td width="10%">'+val['number']+'</td>'+
+                                  '<td width="20%">'+key_4+'</td>'+
+                                  '<td width="23%">'+val['Visitors']+
+                                    '<font style="color:#900;">對 </font>'+val['Home team']+'</td>'+
+                                  '<td width="15%">'+key_3+'</td>'+
+                                  '<td width="10%">'+val['First half']+'</td>'+
+                                  '<td width="10%">'+val['All_Game']+'</td>'+
+                                  '<td width="12%">'+val['Remarks']+'</td>'+
+                                  '</tr>';
+                    }
+                  }
+                }
+              }
+            }
+          }else
+          {
+             for (var key_2 in msg[key]) //key_2新增比數
+            {
+              if(key_2 == 0)
+              {
+                game_form_upd='<tr><td colspan="7"><table width="100%" border="1" cellpadding="0" cellspacing="0" style="font-size:13px; border-collapse:collapse; text-align: center;" bordercolor="#ccc">'+
+                      '<tr height="40">'+
+                        '<th colspan="7" style="background:#F0F8FF">更新了'+key_2+'</th>'+
+                      '</tr>';
+              }else
+              {
+                game_form_upd='<tr><td colspan="7"><table width="100%" border="1" cellpadding="0" cellspacing="0" style="font-size:13px; border-collapse:collapse; text-align: center;" bordercolor="#ccc">'+
+                      '<tr height="40">'+
+                        '<th colspan="7" style="background:#F0F8FF">更新了'+key_2+'</th>'+
+                      '</tr>';
+                for (var key_3 in msg[key][key_2]) //key_3日期
+                {  
+                  game_form_upd+='<tr height="40" class="button_tr">'+
+                    '<th colspan="7" style="background:#F0FFF0">'+key_3+
+                        '<img width=20px onclick="click_show(this.id)" id="'+key_3+'" src="img/down.png" border="0" align="absmiddle"></th>'+
+                   '</tr>';
+                  for (var key_4 in msg[key][key_2][key_3])//key_4 聯盟
+                  {
+                    for (var key_5 in msg[key][key_2][key_3][key_4])//key_5 索引號
+                    {
+                      var val = msg[key][key_2][key_3][key_4][key_5];
+                          game_form_upd+='<tr height="40" class="'+key_3+'">'+
+                                  '<td width="10%">'+val['number']+'</td>'+
+                                  '<td width="20%">'+key_4+'</td>'+
+                                  '<td width="23%">'+val['Visitors']+
+                                    '<font style="color:#900;">對 </font>'+val['Home team']+'</td>'+
+                                  '<td width="15%">'+key_3+'</td>'+
+                                  '<td width="10%">'+val['First half']+'</td>'+
+                                  '<td width="10%">'+val['All_Game']+'</td>'+
+                                  '<td width="12%">'+val['Remarks']+'</td>'+
+                                  '</tr>';
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        game_form=game_form_ADD+game_form_upd;
+        document.getElementById("game_form").innerHTML = game_form;
+      },
+      error:function(xhr,ajaxOptions,thrownError){
+        alert('失敗'+thrownError+ajaxOptions);
+      }
+    })
+  
+  }
+  function secarch() //按下收尋
+  {
+    var date_ago=document.getElementById("date_ago_id").value;   //獲取日期~日期
+    var mydate = document.getElementById("date_id").value;   
+    
+    if (mydate!="" & date_ago!="")                                //如果兩個都有值
+    {
+      if((Date.parse(date_ago)).valueOf()>(Date.parse(mydate)).valueOf())      //比大小將 時間(之前) 擺入date_ago內
+      {                                                                        
+        document.getElementById("date_ago_id").value=mydate;
+        document.getElementById("date_id").value=date_ago;
+      }
+    }
+    $.ajax({
+      url:"search_php.php",
+      data:$("#search").serialize(),
+      type:"POST", 
+      dataType:"json",   
+      success:function(msg){
+        
+        var game_form='';
+        if(msg['game_array']=='找不到')
+        {
+          alert('找不到資料');
+          game_form='<tr><th colspan="7">找不到資料</th></tr>';
+        }else
+        {
+          for(key in msg['game_array']) //key  日期
+          {
+            game_form+='<tr height="40" class="button_tr" >'+
+                        '<th colspan="7" style="background:#F0FFF0">'+key+
+                        '<img width=20px onclick="click_show(this.id)" id="'+key+'" src="img/down.png" border="0" align="absmiddle"></th>'+
+                     '</tr>';
+            for(key_2 in msg['game_array'][key]) //key_2聯盟
+            {
+              for(key_3 in msg['game_array'][key][key_2])//key_3 編號
+              {
+                var val = msg['game_array'][key][key_2][key_3];
+                game_form+='<tr height="40" class="'+key+'">'+
+                              '<td>'+val['number']+'</td>'+
+                              '<td>'+key_2+'</td>'+
+                              '<td>'+val['Visitors']+
+                                '<font style="color:#900;">對 </font>'+
+                                val['Home team']+'</td>'+
+                              '<td>'+key+'</td>'+
+                              '<td>'+val['First half']+'</td>'+
+                              '<td>'+val['All_Game']+'</td>'+
+                              '<td>'+val['Remarks']+'</td>'+
+                          '</tr>';
+              } 
+            }
+          }
+        }
+        
+        document.getElementById("game_form").innerHTML = game_form;
+      },
+      error:function(xhr,ajaxOptions,thrownError){
+        alert('失敗'+thrownError+ajaxOptions);
+      }  
+    });
+  }
+function click_show(id)
+{
+  $("."+id).toggle();
+
+  if($("."+id).is(":hidden")){
+  $("#"+id).attr("src","img/up.png");
+  }else{
+    $("#"+id).attr("src","img/down.png");
+  }
+}
+  
+
+</script>
